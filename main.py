@@ -12,12 +12,12 @@ log = CPLog(__name__)
 class t411(TorrentProvider, MovieProvider):
 
     urls = {
-        'test' : 'https://www.t411.me',
-        'login' : 'https://www.t411.me/users/login/',
-        'login_check': 'https://www.t411.me',
-        'detail': 'https://www.t411.me/torrents/?id=%s',
-        'search': 'https://www.t411.me/torrents/search/?search=%s %s',
-        'download' : 'http://www.t411.me/torrents/download/?id=%s',
+        'test' : 'https://www.t411.io',
+        'login' : 'https://www.t411.io/users/login/',
+        'login_check': 'https://www.t411.io',
+        'detail': 'https://www.t411.io/torrents/?id=%s',
+        'search': 'https://www.t411.io/torrents/search/?search=%s %s',
+        'download' : 'http://www.t411.io/torrents/download/?id=%s',
     }
 
     http_time_between_calls = 1 #seconds
