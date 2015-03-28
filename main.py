@@ -8,6 +8,41 @@ import traceback
 
 log = CPLog(__name__)
 
+import ast
+import operator
+
+_binOps = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.div,
+    ast.Mod: operator.mod
+}
+
+
+def _arithmeticEval(s):
+    """
+    A safe eval supporting basic arithmetic operations.
+
+    :param s: expression to evaluate
+    :return: value
+    """
+    node = ast.parse(s, mode='eval')
+
+    def _eval(node):
+        if isinstance(node, ast.Expression):
+            return _eval(node.body)
+        elif isinstance(node, ast.Str):
+            return node.s
+        elif isinstance(node, ast.Num):
+            return node.n
+        elif isinstance(node, ast.BinOp):
+            return _binOps[type(node.op)](_eval(node.left), _eval(node.right))
+        else:
+            raise Exception('Unsupported type {}'.format(node))
+
+    return _eval(node.body)
+
 
 class t411(TorrentProvider, MovieProvider):
 
@@ -80,6 +115,47 @@ class t411(TorrentProvider, MovieProvider):
 
     def loginSuccess(self, output):
         log.debug('Checking login success for T411: %s' % ('True' if ('logout' in output.lower()) else 'False'))
+
+        if 'confirmer le captcha' in output.lower():
+            log.debug('Too many login attempts. A captcha is displayed.')
+            output = self._solveCaptcha(output)
+
         return 'logout' in output.lower()
+
+    def _solveCaptcha(self, output):
+        """
+        When trying to connect too many times with wrong password, a captcha can be requested.
+        This captcha is really simple and can be solved by the provider.
+
+        <label for="pass">204 + 65 = </label>
+            <input type="text" size="40" name="captchaAnswer" id="lgn" value=""/>
+            <input type="hidden" name="captchaQuery" value="204 + 65 = ">
+            <input type="hidden" name="captchaToken" value="005d54a7428aaf587460207408e92145">
+        <br/>
+
+        :param output: initial login output
+        :return: output after captcha resolution
+        """
+        html = BeautifulSoup(output)
+
+        query = html.find('input', {'name': 'captchaQuery'})
+        token = html.find('input', {'name': 'captchaToken'})
+        if not query or not token:
+            log.error('Unable to solve login captcha.')
+            return output
+
+        query_expr = query.attrs['value'].strip('= ')
+        log.debug(u'Captcha query: ' + query_expr)
+        answer = _arithmeticEval(query_expr)
+
+        log.debug(u'Captcha answer: %s' % answer)
+
+        login_params = self.getLoginParams()
+
+        login_params['captchaAnswer'] = answer
+        login_params['captchaQuery'] = query.attrs['value']
+        login_params['captchaToken'] = token.attrs['value']
+
+        return self.urlopen(self.urls['login'], data = login_params)
 
     loginCheckSuccess = loginSuccess
