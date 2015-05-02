@@ -170,13 +170,13 @@ def acceptableQualityTerms(quality):
     In alternatives, there can be "doubled terms" as "br rip" or "bd rip" for brrip
     These doubled terms have to be handled as AND and are then (firstBit&secondBit) 
     """
-    alternatives = quality['alternatives']
+    alternatives = quality.get('alternative', [])
     # first acceptable term is the identifier itself
     acceptableTerms = [quality['identifier']]
     # handle single terms
     acceptableTerms.extend([ term for term in alternatives if type(term) == type('') ])
     # handle doubled terms (such as 'dvd rip')
     doubledTerms = [ term for term in alternatives if type(term) == type(('', '')) ]
-    acceptableTerms.extend([ '('+first+'&'+second+')' for (first,second) in doubledTerms ])
+    acceptableTerms.extend([ '('+first+'%26'+second+')' for (first,second) in doubledTerms ])
     # join everything and return
     return '|'.join(acceptableTerms)
