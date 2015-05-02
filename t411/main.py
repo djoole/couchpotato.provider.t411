@@ -62,7 +62,7 @@ class t411(TorrentProvider, MovieProvider):
 
         log.debug('Searching T411 for %s' % (title))
 
-        url = self.urls['search'] % (title.replace(':', ''), quality['identifier'])
+        url = self.urls['search'] % (title.replace(':', ''), acceptableQualityTerms(quality))
         data = self.getHTMLData(url)
 
         log.debug('Received data from T411')
@@ -159,3 +159,24 @@ class t411(TorrentProvider, MovieProvider):
         return self.urlopen(self.urls['login'], data = login_params)
 
     loginCheckSuccess = loginSuccess
+
+def acceptableQualityTerms(quality):
+    """
+    This function retrieve all the acceptable terms for a quality (eg hdrip and bdrip for brrip)
+    Then it creates regex accepted by t411 to search for one of this term
+
+    t411 have to handle alternatives as OR and then the regex is firstAlternative|secondAlternative
+    
+    In alternatives, there can be "doubled terms" as "br rip" or "bd rip" for brrip
+    These doubled terms have to be handled as AND and are then (firstBit&secondBit) 
+    """
+    alternatives = quality['alternatives']
+    # first acceptable term is the identifier itself
+    acceptableTerms = [quality['identifier']]
+    # handle single terms
+    acceptableTerms.extend([ term for term in alternatives if type(term) == type('') ])
+    # handle doubled terms (such as 'dvd rip')
+    doubledTerms = [ term for term in alternatives if type(term) == type(('', '')) ]
+    acceptableTerms.extend([ '('+first+'&'+second+')' for (first,second) in doubledTerms ])
+    # join everything and return
+    return '|'.join(acceptableTerms)
