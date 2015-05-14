@@ -5,6 +5,8 @@ from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.torrent.base import TorrentProvider
 from couchpotato.core.media.movie.providers.base import MovieProvider
 import traceback
+from allocine import allocine
+import urllib2
 
 log = CPLog(__name__)
 
@@ -180,3 +182,44 @@ def acceptableQualityTerms(quality):
     acceptableTerms.extend([ '('+first+'%26'+second+')' for (first,second) in doubledTerms ])
     # join everything and return
     return '|'.join(acceptableTerms)
+
+def getFrenchTitle(title):
+    """
+    This function uses Allocine API to get the French movie title of the given title.
+    It does so by searching for movies with the given title. 
+
+    By default, Allocine search for both original title or French title, so the search
+        returns the movie if the given title is original one or french one.
+    Then, we look for the french title in the first result. If there is not, we fall 
+        back to original title (usually the same if the french title is not there).
+    """
+
+    # open the api and create the request
+    api = allocine()
+    try:
+        search = api.search(title)
+    except urllib2.HTTPError:
+        # An HTTP error means there is something going on with Allocine, 
+        # or the keys used by the program to connect to the API are not working any more.
+        log.error('Allocine API is not working. You should test if Allocine is still alive and check the connection keys')
+        return None
+
+    # check if there is a result
+    if 'movie' not in search['feed'].keys():
+        return None
+
+    # if there is a result, extract first result
+    firstResult = search['feed']['movie'][0]
+    newTitle = ''
+    # check if title is existing. If it is, it's the french name and we are good
+    if 'title' in firstResult.keys():
+        newTitle = firstResult['title'].encode('utf-8')
+    # if not, original and french title are the same so return nothing
+    else:
+        newTitle = firstResult['originalTitle'].encode('utf-8')
+        
+    # Then, we check if the new title is the same as the given one. If not, return it
+    if (title == newTitle):
+        return None
+    else:
+        return newTitle
