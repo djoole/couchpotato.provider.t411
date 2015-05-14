@@ -223,3 +223,39 @@ def getFrenchTitle(title):
         return None
     else:
         return newTitle
+
+def replaceTitle(releaseNameI, titleI, newTitleI):
+    """
+    This function is replacing the title in the release name by the old one,
+    so that couchpotato recognise it as a valid release.
+    """
+    
+    # input as lower case
+    releaseName = releaseNameI.lower()
+    title = titleI.lower()
+    newTitle = newTitleI.lower()
+
+    if newTitle is None: # if the newTitle is empty, do nothing
+        return releaseNameI
+    else:
+        separatedWords = []
+        for s in releaseName.split(' '):
+            separatedWords.extend(s.split('.'))
+        # test how far the release name corresponds to the original title
+        index = 0
+        while separatedWords[index] in title.split(' '):
+            index += 1
+        # test how far the release name corresponds to the new title
+        newIndex = 0
+        while separatedWords[newIndex] in newTitle.split(' '):
+            newIndex += 1
+        # then determine if it correspoinds to the new title or old title
+        if index >= newIndex:
+            # the release name corresponds to the original title. SO no change needed
+            return releaseNameI
+        else:
+            # otherwise, we replace the french title by the original title
+            finalName = [title]
+            finalName.extend(separatedWords[newIndex:])
+            newReleaseName = ' '.join(finalName)
+            return newReleaseName
