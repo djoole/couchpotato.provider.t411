@@ -63,8 +63,15 @@ class t411(TorrentProvider, MovieProvider):
     def _searchOnTitle(self, title, movie, quality, results):
 
         log.debug('Searching T411 for %s' % (title))
+        # test the new title and search for it if valid
+        newTitle = getFrenchTitle(title)
+        request = ''
+        if newTitle is not None:
+            request = ('(' + title + ')|(' + newTitle + ')').replace(':', '')
+        else:
+            request = title.replace(':', '')
 
-        url = self.urls['search'] % (title.replace(':', ''), acceptableQualityTerms(quality))
+        url = self.urls['search'] % (request, acceptableQualityTerms(quality))
         data = self.getHTMLData(url)
 
         log.debug('Received data from T411')
@@ -95,7 +102,7 @@ class t411(TorrentProvider, MovieProvider):
                     age = result.findAll('td')[4].text
                     results.append({
                         'id': idt,
-                        'name': release_name,
+                        'name': replaceTitle(release_name, title, newTitle),
                         'url': self.urls['download'] % idt,
                         'detail_url': self.urls['detail'] % idt,
                         'size': self.parseSize(str(result.findAll('td')[5].text)),
