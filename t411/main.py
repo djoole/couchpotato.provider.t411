@@ -182,12 +182,14 @@ def acceptableQualityTerms(quality):
     alternatives = quality.get('alternative', [])
     # first acceptable term is the identifier itself
     acceptableTerms = [quality['identifier']]
+    log.debug('Requesting alternative quality terms for : ' + str(acceptableTerms) )
     # handle single terms
     acceptableTerms.extend([ term for term in alternatives if type(term) == type('') ])
     # handle doubled terms (such as 'dvd rip')
     doubledTerms = [ term for term in alternatives if type(term) == type(('', '')) ]
     acceptableTerms.extend([ '('+first+'%26'+second+')' for (first,second) in doubledTerms ])
     # join everything and return
+    log.debug('Found alternative quality terms : ' + str(acceptableTerms).replace('%26', ' '))
     return '|'.join(acceptableTerms)
 
 def getFrenchTitle(title):
@@ -203,6 +205,7 @@ def getFrenchTitle(title):
 
     # open the api and create the request
     api = allocine()
+    log.debug('Looking for French title of : ' + title)
     try:
         search = api.search(title)
     except urllib2.HTTPError:
@@ -213,6 +216,7 @@ def getFrenchTitle(title):
 
     # check if there is a result
     if 'movie' not in search['feed'].keys():
+        log.debug('Allocine could not find a movie corresponding to : ' + title)
         return None
 
     # if there is a result, extract first result
@@ -227,8 +231,10 @@ def getFrenchTitle(title):
         
     # Then, we check if the new title is the same as the given one. If not, return it
     if (title == newTitle):
+        log.debug('Allocine API found the movie but it is the same title.')
         return None
     else:
+        log.debug('Allocine API found the french title : ' + newTitle)
         return newTitle
 
 def replaceTitle(releaseNameI, titleI, newTitleI):
@@ -245,6 +251,7 @@ def replaceTitle(releaseNameI, titleI, newTitleI):
     if newTitle is None: # if the newTitle is empty, do nothing
         return releaseNameI
     else:
+        log.debug('Replacing -- ' + newTitle + ' -- in the release -- ' + releaseName + ' -- by the original title -- ' + title)
         separatedWords = []
         for s in releaseName.split(' '):
             separatedWords.extend(s.split('.'))
@@ -259,10 +266,12 @@ def replaceTitle(releaseNameI, titleI, newTitleI):
         # then determine if it correspoinds to the new title or old title
         if index >= newIndex:
             # the release name corresponds to the original title. SO no change needed
+            log.debug('The release name is already corresponding. Changed nothing.')
             return releaseNameI
         else:
             # otherwise, we replace the french title by the original title
             finalName = [title]
             finalName.extend(separatedWords[newIndex:])
             newReleaseName = ' '.join(finalName)
+            log.debug('The new release name is : ' + newReleaseName)
             return newReleaseName
