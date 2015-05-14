@@ -5,6 +5,8 @@ from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.torrent.base import TorrentProvider
 from couchpotato.core.media.movie.providers.base import MovieProvider
 import traceback
+from allocine import allocine
+import urllib2
 
 log = CPLog(__name__)
 
@@ -61,8 +63,15 @@ class t411(TorrentProvider, MovieProvider):
     def _searchOnTitle(self, title, movie, quality, results):
 
         log.debug('Searching T411 for %s' % (title))
+        # test the new title and search for it if valid
+        newTitle = getFrenchTitle(title)
+        request = ''
+        if newTitle is not None:
+            request = ('(' + title + ')|(' + newTitle + ')').replace(':', '')
+        else:
+            request = title.replace(':', '')
 
-        url = self.urls['search'] % (title.replace(':', ''), acceptableQualityTerms(quality))
+        url = self.urls['search'] % (request, acceptableQualityTerms(quality))
         data = self.getHTMLData(url)
 
         log.debug('Received data from T411')
@@ -93,7 +102,7 @@ class t411(TorrentProvider, MovieProvider):
                     age = result.findAll('td')[4].text
                     results.append({
                         'id': idt,
-                        'name': release_name,
+                        'name': replaceTitle(release_name, title, newTitle),
                         'url': self.urls['download'] % idt,
                         'detail_url': self.urls['detail'] % idt,
                         'size': self.parseSize(str(result.findAll('td')[5].text)),
@@ -173,10 +182,96 @@ def acceptableQualityTerms(quality):
     alternatives = quality.get('alternative', [])
     # first acceptable term is the identifier itself
     acceptableTerms = [quality['identifier']]
+    log.debug('Requesting alternative quality terms for : ' + str(acceptableTerms) )
     # handle single terms
     acceptableTerms.extend([ term for term in alternatives if type(term) == type('') ])
     # handle doubled terms (such as 'dvd rip')
     doubledTerms = [ term for term in alternatives if type(term) == type(('', '')) ]
     acceptableTerms.extend([ '('+first+'%26'+second+')' for (first,second) in doubledTerms ])
     # join everything and return
+    log.debug('Found alternative quality terms : ' + str(acceptableTerms).replace('%26', ' '))
     return '|'.join(acceptableTerms)
+
+def getFrenchTitle(title):
+    """
+    This function uses Allocine API to get the French movie title of the given title.
+    It does so by searching for movies with the given title. 
+
+    By default, Allocine search for both original title or French title, so the search
+        returns the movie if the given title is original one or french one.
+    Then, we look for the french title in the first result. If there is not, we fall 
+        back to original title (usually the same if the french title is not there).
+    """
+
+    # open the api and create the request
+    api = allocine()
+    log.debug('Looking for French title of : ' + title)
+    try:
+        search = api.search(title)
+    except urllib2.HTTPError:
+        # An HTTP error means there is something going on with Allocine, 
+        # or the keys used by the program to connect to the API are not working any more.
+        log.error('Allocine API is not working. You should test if Allocine is still alive and check the connection keys')
+        return None
+
+    # check if there is a result
+    if 'movie' not in search['feed'].keys():
+        log.debug('Allocine could not find a movie corresponding to : ' + title)
+        return None
+
+    # if there is a result, extract first result
+    firstResult = search['feed']['movie'][0]
+    newTitle = ''
+    # check if title is existing. If it is, it's the french name and we are good
+    if 'title' in firstResult.keys():
+        newTitle = firstResult['title'].encode('utf-8')
+    # if not, original and french title are the same so return nothing
+    else:
+        newTitle = firstResult['originalTitle'].encode('utf-8')
+        
+    # Then, we check if the new title is the same as the given one. If not, return it
+    if (title == newTitle):
+        log.debug('Allocine API found the movie but it is the same title.')
+        return None
+    else:
+        log.debug('Allocine API found the french title : ' + newTitle)
+        return newTitle
+
+def replaceTitle(releaseNameI, titleI, newTitleI):
+    """
+    This function is replacing the title in the release name by the old one,
+    so that couchpotato recognise it as a valid release.
+    """
+    
+    # input as lower case
+    releaseName = releaseNameI.lower()
+    title = titleI.lower()
+    newTitle = newTitleI.lower()
+
+    if newTitle is None: # if the newTitle is empty, do nothing
+        return releaseNameI
+    else:
+        log.debug('Replacing -- ' + newTitle + ' -- in the release -- ' + releaseName + ' -- by the original title -- ' + title)
+        separatedWords = []
+        for s in releaseName.split(' '):
+            separatedWords.extend(s.split('.'))
+        # test how far the release name corresponds to the original title
+        index = 0
+        while separatedWords[index] in title.split(' '):
+            index += 1
+        # test how far the release name corresponds to the new title
+        newIndex = 0
+        while separatedWords[newIndex] in newTitle.split(' '):
+            newIndex += 1
+        # then determine if it correspoinds to the new title or old title
+        if index >= newIndex:
+            # the release name corresponds to the original title. SO no change needed
+            log.debug('The release name is already corresponding. Changed nothing.')
+            return releaseNameI
+        else:
+            # otherwise, we replace the french title by the original title
+            finalName = [title]
+            finalName.extend(separatedWords[newIndex:])
+            newReleaseName = ' '.join(finalName)
+            log.debug('The new release name is : ' + newReleaseName)
+            return newReleaseName
