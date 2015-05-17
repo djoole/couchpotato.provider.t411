@@ -251,7 +251,7 @@ def replaceTitle(releaseNameI, titleI, newTitleI):
     if newTitle is None: # if the newTitle is empty, do nothing
         return releaseNameI
     else:
-        log.debug('Replacing -- ' + newTitle + ' -- in the release -- ' + releaseName + ' -- by the original title -- ' + title)
+        log.debug('Replacing -- ' + newTitle.decode('ascii', errors='replace') + ' -- in the release -- ' + releaseName.decode('ascii', errors='replace') + ' -- by the original title -- ' + title.decode('ascii', errors='replace'))
         separatedWords = []
         for s in releaseName.split(' '):
             separatedWords.extend(s.split('.'))
