@@ -224,10 +224,10 @@ def getFrenchTitle(title):
     newTitle = ''
     # check if title is existing. If it is, it's the french name and we are good
     if 'title' in firstResult.keys():
-        newTitle = firstResult['title'].encode('utf-8')
+        newTitle = firstResult['title']
     # if not, original and french title are the same so return nothing
     else:
-        newTitle = firstResult['originalTitle'].encode('utf-8')
+        newTitle = firstResult['originalTitle']
         
     # Then, we check if the new title is the same as the given one. If not, return it
     if (title == newTitle):
