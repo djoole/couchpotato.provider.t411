@@ -62,7 +62,7 @@ class t411(TorrentProvider, MovieProvider):
 
     def _searchOnTitle(self, title, movie, quality, results):
 
-        log.debug('Searching T411 for %s' % (title))
+        log.debug('Searching T411 for %s' % title)
         # test the new title and search for it if valid
         newTitle = getFrenchTitle(title)
         request = ''
@@ -205,6 +205,7 @@ def getFrenchTitle(title):
 
     # open the api and create the request
     api = allocine()
+    log.debug(type(title))
     log.debug('Looking for French title of : ' + title)
     try:
         search = api.search(title)
@@ -243,14 +244,13 @@ def replaceTitle(releaseNameI, titleI, newTitleI):
     so that couchpotato recognise it as a valid release.
     """
     
-    # input as lower case
-    releaseName = releaseNameI.lower()
-    title = titleI.lower()
-    newTitle = newTitleI.lower()
-
-    if newTitle is None: # if the newTitle is empty, do nothing
+    if newTitleI is None: # if the newTitle is empty, do nothing
         return releaseNameI
     else:
+        # input as lower case
+        releaseName = releaseNameI.lower()
+        title = titleI.lower()
+        newTitle = newTitleI.lower()
         #log.debug('Replacing -- ' + newTitle.decode('ascii', errors='replace') + ' -- in the release -- ' + releaseName.decode('ascii', errors='replace') + ' -- by the original title -- ' + title.decode('ascii', errors='replace'))
         separatedWords = []
         for s in releaseName.split(' '):
