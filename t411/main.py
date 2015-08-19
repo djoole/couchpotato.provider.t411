@@ -1,3 +1,4 @@
+# coding: utf8
 from bs4 import BeautifulSoup
 from couchpotato.core.helpers.encoding import tryUrlencode
 from couchpotato.core.helpers.variable import tryInt
@@ -7,6 +8,9 @@ from couchpotato.core.media.movie.providers.base import MovieProvider
 import traceback
 from allocine import allocine
 import urllib2
+import json
+import sys
+import urllib
 
 log = CPLog(__name__)
 
@@ -62,15 +66,28 @@ class t411(TorrentProvider, MovieProvider):
 
     def _searchOnTitle(self, title, movie, quality, results):
 
-        log.debug('Searching T411 for %s' % title)
+        log.debug ('-----------------------------')
+        log.debug('a debug speech just to show that there is a problem with the function debug for displaying titles with accents. Ex below show the problem for movie Les Associés')
+        log.debug('ddd ' + title)
+        log.debug('sss ' + title)
+        log.debug ('-----------------------------')
+
+        log.debug('encoding du terminal stdin : ' + sys.stdin.encoding)
+        log.debug('encoding du terminal stdout : ' + sys.stdin.encoding)
+        log.debug('encoding du filesystem : ' + sys.getfilesystemencoding())
+
         # test the new title and search for it if valid
-        newTitle = getFrenchTitle(title)
+        newTitle = self.getFrenchTitle(title, str(movie['info']['year']))
         request = ''
+        if isinstance(title, str):
+            title = title.decode('utf8')
         if newTitle is not None:
-            request = ('(' + title + ')|(' + newTitle + ')').replace(':', '')
+            request = (u'(' + title + u')|(' + newTitle + u')').replace(':', '')
         else:
             request = title.replace(':', '')
+        request = urllib2.quote(request.encode('iso-8859-1'))
 
+        log.debug('Looking on T411 for movie named %s or %s' % (title, newTitle))
         url = self.urls['search'] % (request, acceptableQualityTerms(quality))
         data = self.getHTMLData(url)
 
@@ -169,6 +186,34 @@ class t411(TorrentProvider, MovieProvider):
 
     loginCheckSuccess = loginSuccess
 
+    def getFrenchTitle(self, title, year):
+        """
+        This function uses TMDB API to get the French movie title of the given title.
+        """
+
+        url = "https://api.themoviedb.org/3/search/movie?api_key=0f3094295d96461eb7a672626c54574d&language=fr&query=%s" % title
+        log.debug('Looking on TMDB for French title of : ' + title)
+        #data = self.getJsonData(url, decode_from = 'utf8')
+        data = self.getJsonData(url)
+        try:
+            if data['results'] != None:
+                for res in data['results']:
+                    yearI = res['release_date']
+                    if year in yearI:
+                        break
+                frTitle = res['title'].lower()
+                if frTitle == title:
+                    log.debug('TMDB report identical FR and original title')
+                    return None
+                else:
+                    log.debug(u'L\'API TMDB a trouvé un titre français => ' + frTitle)
+                    return frTitle
+            else:
+                log.debug('TMDB could not find a movie corresponding to : ' + title)
+                return None
+        except:
+            log.error('Failed to parse TMDB API: %s' % (traceback.format_exc()))
+
 def acceptableQualityTerms(quality):
     """
     This function retrieve all the acceptable terms for a quality (eg hdrip and bdrip for brrip)
@@ -191,52 +236,6 @@ def acceptableQualityTerms(quality):
     # join everything and return
     log.debug('Found alternative quality terms : ' + str(acceptableTerms).replace('%26', ' '))
     return '|'.join(acceptableTerms)
-
-def getFrenchTitle(title):
-    """
-    This function uses Allocine API to get the French movie title of the given title.
-    It does so by searching for movies with the given title. 
-
-    By default, Allocine search for both original title or French title, so the search
-        returns the movie if the given title is original one or french one.
-    Then, we look for the french title in the first result. If there is not, we fall 
-        back to original title (usually the same if the french title is not there).
-    """
-
-    # open the api and create the request
-    api = allocine()
-    log.debug(type(title))
-    log.debug('Looking for French title of : ' + title)
-    try:
-        search = api.search(title)
-    except urllib2.HTTPError:
-        # An HTTP error means there is something going on with Allocine, 
-        # or the keys used by the program to connect to the API are not working any more.
-        log.error('Allocine API is not working. You should test if Allocine is still alive and check the connection keys')
-        return None
-
-    # check if there is a result
-    if 'movie' not in search['feed'].keys():
-        log.debug('Allocine could not find a movie corresponding to : ' + title)
-        return None
-
-    # if there is a result, extract first result
-    firstResult = search['feed']['movie'][0]
-    newTitle = ''
-    # check if title is existing. If it is, it's the french name and we are good
-    if 'title' in firstResult.keys():
-        newTitle = firstResult['title']
-    # if not, original and french title are the same so return nothing
-    else:
-        newTitle = firstResult['originalTitle']
-        
-    # Then, we check if the new title is the same as the given one. If not, return it
-    if (title == newTitle):
-        log.debug('Allocine API found the movie but it is the same title.')
-        return None
-    else:
-        log.debug('Allocine API found the french title : ' + newTitle)
-        return newTitle
 
 def replaceTitle(releaseNameI, titleI, newTitleI):
     """
