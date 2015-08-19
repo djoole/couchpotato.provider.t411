@@ -6,7 +6,6 @@ from couchpotato.core.logger import CPLog
 from couchpotato.core.media._base.providers.torrent.base import TorrentProvider
 from couchpotato.core.media.movie.providers.base import MovieProvider
 import traceback
-from allocine import allocine
 import urllib2
 import json
 import sys
