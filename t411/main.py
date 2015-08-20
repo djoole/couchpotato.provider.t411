@@ -65,15 +65,15 @@ class t411(TorrentProvider, MovieProvider):
 
     def _searchOnTitle(self, title, movie, quality, results):
 
-        log.debug ('-----------------------------')
-        log.debug('a debug speech just to show that there is a problem with the function debug for displaying titles with accents. Ex below show the problem for movie Les Associés')
-        log.debug('ddd ' + title)
-        log.debug('sss ' + title)
-        log.debug ('-----------------------------')
+        #log.debug ('-----------------------------')
+        #log.debug('a debug speech just to show that there is a problem with the function debug for displaying titles with accents. Ex below show the problem for movie Les Associés')
+        #log.debug('ddd ' + title)
+        #log.debug('sss ' + title)
+        #log.debug ('-----------------------------')
 
-        log.debug('encoding du terminal stdin : ' + sys.stdin.encoding)
-        log.debug('encoding du terminal stdout : ' + sys.stdin.encoding)
-        log.debug('encoding du filesystem : ' + sys.getfilesystemencoding())
+        #log.debug('encoding du terminal stdin : ' + sys.stdin.encoding)
+        #log.debug('encoding du terminal stdout : ' + sys.stdin.encoding)
+        #log.debug('encoding du filesystem : ' + sys.getfilesystemencoding())
 
         # test the new title and search for it if valid
         newTitle = self.getFrenchTitle(title, str(movie['info']['year']))
