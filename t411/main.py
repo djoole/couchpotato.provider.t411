@@ -52,12 +52,12 @@ def _arithmeticEval(s):
 class t411(TorrentProvider, MovieProvider):
 
     urls = {
-        'test' : 'https://www.t411.io',
-        'login' : 'https://www.t411.io/users/login/',
-        'login_check': 'https://www.t411.io',
-        'detail': 'https://www.t411.io/torrents/?id=%s',
-        'search': 'https://www.t411.io/torrents/search/?search=%s %s',
-        'download' : 'http://www.t411.io/torrents/download/?id=%s',
+        'test' : 'https://www.t411.in',
+        'login' : 'https://www.t411.in/users/login/',
+        'login_check': 'https://www.t411.in',
+        'detail': 'https://www.t411.in/torrents/?id=%s',
+        'search': 'https://www.t411.in/torrents/search/?search=%s %s',
+        'download' : 'http://www.t411.in/torrents/download/?id=%s',
     }
 
     http_time_between_calls = 1 #seconds
