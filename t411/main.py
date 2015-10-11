@@ -52,12 +52,12 @@ def _arithmeticEval(s):
 class t411(TorrentProvider, MovieProvider):
 
     urls = {
-        'test' : 'https://www.t411.io',
-        'login' : 'https://www.t411.io/users/login/',
-        'login_check': 'https://www.t411.io',
-        'detail': 'https://www.t411.io/torrents/?id=%s',
-        'search': 'https://www.t411.io/torrents/search/?search=%s %s',
-        'download' : 'http://www.t411.io/torrents/download/?id=%s',
+        'test' : 'https://www.t411.in',
+        'login' : 'https://www.t411.in/users/login/',
+        'login_check': 'https://www.t411.in',
+        'detail': 'https://www.t411.in/torrents/?id=%s',
+        'search': 'https://www.t411.in/torrents/search/?search=%s %s',
+        'download' : 'http://www.t411.in/torrents/download/?id=%s',
     }
 
     http_time_between_calls = 1 #seconds
@@ -116,6 +116,7 @@ class t411(TorrentProvider, MovieProvider):
                     if 'multi' in release_name.lower():
                         release_name = release_name.lower().replace('truefrench','').replace('french','')
                     age = result.findAll('td')[4].text
+                    log.debug('result : name=%s, detail_url=%s' % (replaceTitle(release_name, title, newTitle), (self.urls['detail'] % idt)))
                     results.append({
                         'id': idt,
                         'name': replaceTitle(release_name, title, newTitle),
@@ -249,7 +250,7 @@ def replaceTitle(releaseNameI, titleI, newTitleI):
         releaseName = releaseNameI.lower()
         title = titleI.lower()
         newTitle = newTitleI.lower()
-        #log.debug('Replacing -- ' + newTitle.decode('ascii', errors='replace') + ' -- in the release -- ' + releaseName.decode('ascii', errors='replace') + ' -- by the original title -- ' + title.decode('ascii', errors='replace'))
+        log.debug('Replacing -- ' + newTitle + ' -- in the release -- ' + releaseName + ' -- by the original title -- ' + title)
         separatedWords = []
         for s in releaseName.split(' '):
             separatedWords.extend(s.split('.'))
