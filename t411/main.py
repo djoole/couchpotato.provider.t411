@@ -113,8 +113,9 @@ class t411(TorrentProvider, MovieProvider):
                             release_name = release_name[0:index] + '(' + str(movie['info']['year']) + ').' + release_name[index:]
                     #if 'the' not in release_name.lower() and (words[-1] == 'the' or words[0] == 'the'):
                     #    release_name = 'the.' + release_name
-                    if 'multi' in release_name.lower():
-                        release_name = release_name.lower().replace('truefrench','').replace('french','')
+                    if self.conf('multi'):
+                        if 'multi' in release_name.lower():
+                            release_name = release_name.lower().replace('truefrench','').replace('french','')
                     age = result.findAll('td')[4].text
                     log.debug('result : name=%s, detail_url=%s' % (replaceTitle(release_name, title, newTitle), (self.urls['detail'] % idt)))
                     results.append({

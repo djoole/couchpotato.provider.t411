@@ -36,6 +36,14 @@ config = [{
                     'description': 'Will ignore the year in the search results',
                 },
                 {
+                    'name': 'multi',
+                    'label': 'ignore lang in multi',
+                    'default': 0,
+                    'type': 'bool',
+                    'description': 'Will ignore "french" and "truefrench" if "multi" is detected',
+
+                },
+                {
                     'name': 'seed_ratio',
                     'label': 'Seed ratio',
                     'type': 'float',
